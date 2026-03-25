@@ -25,10 +25,12 @@ Este repositorio contiene los laboratorios y entregas del curso, organizados por
 
 ## Configuración del entorno
 
+```
 uv venv
 source .venv/bin/activate
 uv sync
 pre-commit install
+```
 
 ## Comentarios
 Git es la peor herramienta que se le pudo ocurrir al ser humano. Maldito seas Linus!
