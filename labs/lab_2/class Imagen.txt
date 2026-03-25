@@ -1,0 +1,235 @@
+class Imagen:
+    """Contenedor de imágenes."""
+
+    def __init__(self, img: np.ndarray) -> None:
+        if isinstance(img, np.ndarray):
+            if img.ndim != 3:
+                raise ValueError("El argumento debe ser un arreglo de numpy de solo 3 dimensiones")
+            if img.shape[-1] != 3:
+                raise ValueError(
+                    "El argumento debe ser un arreglo de numpy de solo 3 dimensiones "
+                    "tal que la última dimensión solo tiene 3 canales"
+                )
+            self.imagen = img
+        else:
+            raise TypeError("Debes entregar un arreglo de numpy como argumento del constructor de Imagen")
+
+    def show(self) -> None:
+        """Muestra la imágen contenida en el objeto utilizando imshow de Matplotlib."""
+        plt.imshow(self.imagen)
+        plt.axis('off')
+        plt.show()
+
+    def __repr__(self) -> str:
+        """Retorna un string con las características de la imagen cargada."""
+        img = self.imagen
+        h, w, c = img.shape
+        
+        # Cálculos por canal
+        mins = np.min(img, axis=(0, 1))
+        maxs = np.max(img, axis=(0, 1))
+        means = np.mean(img, axis=(0, 1))
+        stds = np.std(img, axis=(0, 1))
+        p25 = np.percentile(img, 25, axis=(0, 1))
+        p50 = np.percentile(img, 50, axis=(0, 1))
+        p75 = np.percentile(img, 75, axis=(0, 1))
+
+        return (
+            f"Características de la imagen cargada:\n"
+            f"- Dimensiones: {h} x {w} x {c}\n"
+            f"- Tipo de datos: {img.dtype}\n"
+            f"- Peso en MB: {img.nbytes / 1e6:.2f}\n"
+            f"- Estadísticas por canal:\n"
+            f"    - Min: ({mins[0]}, {mins[1]}, {mins[2]})\n"
+            f"    - Max: ({maxs[0]}, {maxs[1]}, {maxs[2]})\n"
+            f"    - Mean: ({means[0]:.2f}, {means[1]:.2f}, {means[2]:.2f})\n"
+            f"    - Std: ({stds[0]:.2f}, {stds[1]:.2f}, {stds[2]:.2f})\n"
+            f"    - Percentil 25: ({p25[0]}, {p25[1]}, {p25[2]})\n"
+            f"    - Percentil 50: ({p50[0]}, {p50[1]}, {p50[2]})\n"
+            f"    - Percentil 75: ({p75[0]}, {p75[1]}, {p75[2]})"
+        )
+
+    def __add__(self, other: Union[int, float, np.ndarray, "Imagen"]) -> "Imagen":
+            """Redefine la operación + entre imagen y escalar, arreglo u otra Imagen.
+
+            Usa indexado condicional para saturar los valores resultantes.
+            El resultado es un nuevo objeto Imagen que contiene una copia del array resultante.
+            Si `other` es una Imagen, sus dimensiones deben coincidir con self.imagen;
+            en caso contrario, se lanza un ValueError.
+
+            Parameters
+            ----------
+            other : Union[int, float, np.ndarray, Imagen]
+                Escalar, arreglo u objeto Imagen que será sumado a cada pixel de la imagen.
+
+            Returns
+            -------
+            Imagen
+                Nuevo objeto Imagen con la suma saturada a [0, 255].
+            """
+            # 1. Extraer el valor/array a sumar y validar dimensiones si es objeto Imagen
+            if isinstance(other, Imagen):
+                if self.imagen.shape != other.imagen.shape:
+                    raise ValueError("Las dimensiones de las imágenes deben coincidir para la suma.")
+                data_to_add = other.imagen
+            else:
+                data_to_add = other
+
+            # 2. Realizar la operación en punto flotante para evitar el overflow de uint8
+            # (Si sumamos 200 + 100 en uint8, daría 44 en lugar de 300)
+            resultado = self.imagen.astype(float) + data_to_add
+
+            # 3. Indexado condicional para saturar valores (clipping)
+            resultado[resultado > 255] = 255
+            resultado[resultado < 0] = 0
+
+            # 4. Retornar una nueva instancia de Imagen con el array convertido de vuelta a uint8
+            return Imagen(resultado.astype(np.uint8))
+
+    def __radd__(self, other: Union[int, float, np.ndarray, "Imagen"]) -> "Imagen":
+        """Operación conmutativa de __add__ (la suma es conmutativa: a+b == b+a).
+
+        Hint: debería llamar a __add__...
+
+        Parameters
+        ----------
+        other : Union[int, float, np.ndarray, Imagen]
+            Escalar, arreglo u objeto Imagen que será sumado a cada pixel.
+
+        Returns
+        -------
+        Imagen
+            Nuevo objeto Imagen con la suma saturada a [0, 255].
+        """
+        # Dado que la suma es conmutativa, simplemente delegamos la lógica
+        # al método __add__, que ya maneja la validación de tipos y saturación.
+        return self.__add__(other)
+
+    def __sub__(self, other: Union[int, float, np.ndarray, "Imagen"]) -> "Imagen":
+        """Redefine la operación - entre imagen y escalar, arreglo u otra Imagen.
+
+        Usa indexado condicional para saturar los valores resultantes.
+        El resultado es un nuevo objeto Imagen que contiene una copia del array resultante.
+        Si `other` es una Imagen, sus dimensiones deben coincidir con self.imagen;
+        en caso contrario, se lanza un ValueError.
+
+        Parameters
+        ----------
+        other : Union[int, float, np.ndarray, Imagen]
+            Escalar, arreglo u objeto Imagen que será restado a cada pixel.
+
+        Returns
+        -------
+        Imagen
+            Nuevo objeto Imagen con la diferencia saturada a [0, 255].
+        """
+        # 1. Extraer el valor/array a restar y validar dimensiones
+        if isinstance(other, Imagen):
+            if self.imagen.shape != other.imagen.shape:
+                raise ValueError("Las dimensiones de las imágenes deben coincidir para la resta.")
+            data_to_sub = other.imagen
+        else:
+            data_to_sub = other
+
+        # 2. Operar en float para evitar el subdesbordamiento (underflow) de uint8
+        # (En uint8, 50 - 100 daría 206 en lugar de -50)
+        resultado = self.imagen.astype(float) - data_to_sub
+
+        # 3. Saturar valores al rango [0, 255]
+        resultado[resultado > 255] = 255
+        resultado[resultado < 0] = 0
+
+        # 4. Retornar nueva instancia
+        return Imagen(resultado.astype(np.uint8))
+
+    def __rsub__(self, other: Union[int, float, np.ndarray, "Imagen"]) -> "Imagen":
+        """Redefine la operación other - self (resta por la derecha).
+
+        ⚠️ NOTA: La resta NO es conmutativa: (other - self) ≠ (self - other).
+        Este método computa `other - self.imagen` (NO `self.imagen - other`).
+
+        El resultado es un nuevo objeto Imagen que contiene una copia del array resultante.
+        Si `other` es una Imagen, sus dimensiones deben coincidir con self.imagen;
+        en caso contrario, se lanza un ValueError.
+
+        Parameters
+        ----------
+        other : Union[int, float, np.ndarray, Imagen]
+            Escalar, arreglo u objeto Imagen del que se restará self.
+
+        Returns
+        -------
+        Imagen
+            Nuevo objeto Imagen con la diferencia saturada a [0, 255].
+        """
+        # 1. Extraer el minuendo (el valor del que restamos)
+        if isinstance(other, Imagen):
+            if self.imagen.shape != other.imagen.shape:
+                raise ValueError("Las dimensiones deben coincidir para la resta por la derecha.")
+            minuendo = other.imagen
+        else:
+            minuendo = other
+
+        # 2. Operación: other - self.imagen
+        resultado = minuendo - self.imagen.astype(float)
+
+        # 3. Saturar valores
+        resultado[resultado > 255] = 255
+        resultado[resultado < 0] = 0
+
+        # 4. Retornar nueva instancia
+        return Imagen(resultado.astype(np.uint8))
+
+    def __mul__(self, other: Union[int, float, np.ndarray, "Imagen"]) -> "Imagen":
+        """Redefine la operación * entre imagen y escalar, arreglo u otra Imagen.
+
+        Usa indexado condicional para saturar los valores resultantes.
+        El resultado es un nuevo objeto Imagen que contiene una copia del array resultante.
+        Si `other` es una Imagen, sus dimensiones deben coincidir con self.imagen;
+        en caso contrario, se lanza un ValueError.
+
+        Parameters
+        ----------
+        other : Union[int, float, np.ndarray, Imagen]
+            Escalar, arreglo u objeto Imagen por el que se multiplicará la imagen.
+
+        Returns
+        -------
+        Imagen
+            Nuevo objeto Imagen con el producto saturado a [0, 255].
+        """
+        # 1. Validar dimensiones y extraer datos si el operando es Imagen
+        if isinstance(other, Imagen):
+            if self.imagen.shape != other.imagen.shape:
+                raise ValueError("Las dimensiones deben coincidir para la multiplicación.")
+            factor = other.imagen
+        else:
+            factor = other
+
+        # 2. Multiplicación en punto flotante para evitar desbordamiento prematuro
+        resultado = self.imagen.astype(float) * factor
+
+        # 3. Saturación mediante indexado condicional
+        resultado[resultado > 255] = 255
+        resultado[resultado < 0] = 0
+
+        # 4. Retornar nueva instancia
+        return Imagen(resultado.astype(np.uint8))
+
+    def __rmul__(self, other: Union[int, float, np.ndarray, "Imagen"]) -> "Imagen":
+        """Operación conmutativa de __mul__ (la multiplicación es conmutativa: a*b == b*a).
+
+        Hint: debería llamar a __mul__...
+
+        Parameters
+        ----------
+        other : Union[int, float, np.ndarray, Imagen]
+            Escalar, arreglo u objeto Imagen por el que se multiplicará la imagen.
+
+        Returns
+        -------
+        Imagen
+            Nuevo objeto Imagen con el producto saturado a [0, 255].
+        """
+        # Delegamos la lógica a __mul__ por ser una operación conmutativa
+        return self.__mul__(other)
