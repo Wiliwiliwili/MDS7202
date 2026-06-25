@@ -1,18 +1,16 @@
-from pathlib import Path
 import time
-import pandas as pd
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
+from pathlib import Path
 
+import pandas as pd
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from datetime import datetime
-
 from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
-
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder
 
 DATA_DIR = Path("/home/muaddib/Projects/MDS7202/labs/lab_9/data")
 OUTPUT_PATH = Path("/tmp/spotify_data.parquet")
