@@ -1,0 +1,40 @@
+[project]
+name = "proyecto-final-mds7202"
+version = "0.1.0"
+description = "Entorno de análisis y experimentación (Partes 1 y 2) del proyecto final MDS7202"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "cloudpickle>=3.1.1",
+    "ipywidgets>=8.1.5",
+    "jupyterlab>=4.5.6",
+    "lightgbm>=4.6.0",
+    "llvmlite>=0.44",
+    "matplotlib>=3.10.8",
+    "mlflow>=3.14",
+    "nltk>=3.9.1",
+    "numpy>=2.4.3",
+    "optuna>=4.1.0",
+    "optuna-integration>=4.1.0",
+    "pandas<3",
+    "plotly>=6.6.0",
+    "pyarrow>=14.0.0,<25",
+    "scikit-learn>=1.8.0",
+    "umap-learn>=0.5.12",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors: errores de estilo (indentación, espacios, etc.)
+    "W",   # pycodestyle warnings: advertencias de estilo menores
+    "F",   # pyflakes: imports no usados, variables indefinidas, nombres duplicados
+    "I",   # isort: orden y agrupación correcta de imports
+    "B",   # flake8-bugbear: patrones propensos a bugs y malas prácticas
+    "UP",  # pyupgrade: modernización automática de sintaxis a Python 3.12+
+]
+ignore = [
+    "E501", # line-too-long: largo de línea (delegado a ruff-format)
+]
