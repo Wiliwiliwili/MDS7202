@@ -1,5 +1,4 @@
 import gradio as gr
-
 from services import enviar_prediccion
 
 CANALES = ["Correo", "Página Web", "Whatsapp"]

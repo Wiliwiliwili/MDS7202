@@ -1,5 +1,4 @@
 from fastapi import FastAPI, HTTPException
-
 from generate_prediction import generate_prediction
 from models import PredictionRequest, PredictionResponse
 
